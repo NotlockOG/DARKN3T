@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Terminal Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0c0c0c;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .terminal {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        .terminal-header {
+            background: #00ff00;
+            color: #0c0c0c;
+            padding: 8px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .peers-count { font-size: 12px; }
+        .output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .output::-webkit-scrollbar { width: 8px; }
+        .output::-webkit-scrollbar-track { background: #0c0c0c; }
+        .output::-webkit-scrollbar-thumb { background: #00ff00; }
+        .line { margin-bottom: 4px; }
+        .info { color: #00aaff; }
+        .success { color: #00ff00; }
+        .warning { color: #ffaa00; }
+        .error { color: #ff0000; }
+        .sent { color: #00ff00; }
+        .received { color: #ffff00; }
+        .message-image {
+            max-width: 300px;
+            max-height: 300px;
+            margin-top: 5px;
+            border: 1px solid #00ff00;
+            cursor: pointer;
+        }
+        .setup-panel {
+            padding: 15px;
+            border-bottom: 1px solid #00ff00;
+            max-height: 40%;
+            overflow-y: auto;
+        }
+        .setup-panel.hidden { display: none; }
+        .step { margin-bottom: 15px; }
+        input, textarea {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        input[type="file"] { display: none; }
+        button {
+            background: #00ff00;
+            color: #0c0c0c;
+            border: none;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+            margin-right: 5px;
+        }
+        button:hover { background: #00cc00; }
+        button:disabled {
+            background: #004400;
+            color: #006600;
+            cursor: not-allowed;
+        }
+        .input-area {
+            padding: 15px;
+            background: #0c0c0c;
+            border-top: 1px solid #00ff00;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-area input[type="text"] { flex: 1; }
+        .input-controls {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <span>P2P-CHAT v5.0 [STATIC + E2E ENCRYPTED]</span>
+            <span class="peers-count" id="peersCount">PEERS: 0</span>
+        </div>
+
+        <div class="setup-panel" id="setupPanel">
+            <div class="step">
+                <div class="line info">// Step 1: Create Connection Offer</div>
+                <button id="createBtn">CREATE OFFER</button>
+            </div>
+            <div class="step" id="offerStep" style="display:none;">
+                <div class="line info">// Step 2: Copy this and send to peer:</div>
+                <textarea id="offerBox" readonly></textarea>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('offerBox').value)">COPY OFFER</button>
+            </div>
+            <div class="step" id="answerInputStep" style="display:none;">
+                <div class="line info">// Step 3: Paste peer's answer here:</div>
+                <textarea id="answerInput"></textarea>
+                <button id="connectBtn">CONNECT</button>
+            </div>
+            <div class="step">
+                <div class="line info">// OR: Paste peer's offer here:</div>
+                <textarea id="remoteOfferInput"></textarea>
+                <button id="answerBtn">CREATE ANSWER</button>
+            </div>
+            <div class="step" id="answerStep" style="display:none;">
+                <div class="line info">// Send this answer back to peer:</div>
+                <textarea id="answerBox" readonly></textarea>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('answerBox').value)">COPY ANSWER</button>
+            </div>
+        </div>
+
+        <div class="output" id="output">
+            <div class="line success">╔═══════════════════════════════════════════════╗</div>
+            <div class="line success">║  P2P ENCRYPTED CHAT - STATIC VERSION          ║</div>
+            <div class="line success">╚═══════════════════════════════════════════════╝</div>
+            <div class="line"></div>
+            <div class="line info">$ Initializing P2P connection protocol...</div>
+            <div class="line success">$ AES-256-GCM encryption enabled</div>
+            <div class="line success">$ WebRTC data channels ready</div>
+            <div class="line success">$ Image sharing enabled</div>
+            <div class="line warning">$ Follow steps above to connect with a peer...</div>
+            <div class="line"></div>
+            <div class="line info">$ This version works WITHOUT a server!</div>
+            <div class="line info">$ Just exchange the offer/answer codes manually</div>
+        </div>
+
+        <div class="input-area">
+            <span class="success">></span>
+            <input type="text" id="messageInput" placeholder="Connect to a peer first..." disabled>
+            <div class="input-controls">
+                <input type="file" id="imageInput" accept="image/*">
+                <button id="imageBtn" disabled title="Send Image">IMG</button>
+                <button id="sendBtn" disabled>SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const peers = new Map();
+        let encryptionKey;
+        
+        const output = document.getElementById('output');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const imageBtn = document.getElementById('imageBtn');
+        const imageInput = document.getElementById('imageInput');
+        const setupPanel = document.getElementById('setupPanel');
+        const peersCount = document.getElementById('peersCount');
+
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        function log(text, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `line ${type}`;
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function logImage(src, sender, type = 'received') {
+            const line = document.createElement('div');
+            line.className = `line ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            line.textContent = `[${timestamp}] <${sender}>: [IMAGE]`;
+            output.appendChild(line);
+            
+            const img = document.createElement('img');
+            img.className = 'message-image';
+            img.src = src;
+            img.onclick = () => window.open(src);
+            output.appendChild(img);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updatePeersCount() {
+            peersCount.textContent = `PEERS: ${peers.size}`;
+        }
+
+        async function generateKey() {
+            return await crypto.subtle.generateKey(
+                { name: 'AES-GCM', length: 256 },
+                true,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encrypt(text) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoded = new TextEncoder().encode(text);
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                encryptionKey,
+                encoded
+            );
+            const combined = new Uint8Array(iv.length + encrypted.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(encrypted), iv.length);
+            return btoa(String.fromCharCode(...combined));
+        }
+
+        async function decrypt(encryptedText) {
+            const combined = Uint8Array.from(atob(encryptedText), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const data = combined.slice(12);
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: iv },
+                encryptionKey,
+                data
+            );
+            return new TextDecoder().decode(decrypted);
+        }
+
+        function setupDataChannel(channel, peerId) {
+            channel.onopen = () => {
+                log(`$ Connected to peer ${peerId}`, 'success');
+                updatePeersCount();
+                if (peers.size === 1) {
+                    setupPanel.classList.add('hidden');
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    imageBtn.disabled = false;
+                    messageInput.placeholder = 'Type message...';
+                    messageInput.focus();
+                    
+                    log('', 'info');
+                    log('╔═══════════════════════════════════════════════╗', 'success');
+                    log('║  CONNECTION ESTABLISHED                        ║', 'success');
+                    log('║  E2E ENCRYPTION: ACTIVE                        ║', 'success');
+                    log('║  ALL TRAFFIC: PEER-TO-PEER                     ║', 'success');
+                    log('╚═══════════════════════════════════════════════╝', 'success');
+                    log('', 'info');
+                }
+            };
+            
+            channel.onmessage = async (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.type === 'message') {
+                        const decrypted = await decrypt(data.content);
+                        const timestamp = new Date().toLocaleTimeString();
+                        log(`[${timestamp}] <peer-${peerId}>: ${decrypted}`, 'received');
+                    } else if (data.type === 'image') {
+                        logImage(data.content, `peer-${peerId}`, 'received');
+                    }
+                } catch (err) {
+                    log('$ ERROR: Failed to process message', 'error');
+                }
+            };
+            
+            channel.onclose = () => {
+                peers.delete(peerId);
+                log(`$ Peer ${peerId} disconnected`, 'warning');
+                updatePeersCount();
+                if (peers.size === 0) {
+                    messageInput.disabled = true;
+                    sendBtn.disabled = true;
+                    imageBtn.disabled = true;
+                    messageInput.placeholder = 'Connect to a peer first...';
+                }
+            };
+        }
+
+        async function createPeerConnection(peerId, initiator = false) {
+            if (peers.has(peerId)) return;
+            
+            const pc = new RTCPeerConnection(config);
+            const peerData = { pc, channel: null, peerId };
+            peers.set(peerId, peerData);
+            
+            if (initiator) {
+                const channel = pc.createDataChannel('chat');
+                peerData.channel = channel;
+                setupDataChannel(channel, peerId);
+            } else {
+                pc.ondatachannel = (e) => {
+                    peerData.channel = e.channel;
+                    setupDataChannel(e.channel, peerId);
+                };
+            }
+            
+            updatePeersCount();
+            return peerData;
+        }
+
+        // Create offer
+        document.getElementById('createBtn').addEventListener('click', async () => {
+            log('$ Generating encryption key...', 'info');
+            encryptionKey = await generateKey();
+            
+            const peerId = 'peer_' + Math.random().toString(36).substr(2, 6);
+            const peerData = await createPeerConnection(peerId, true);
+            const pc = peerData.pc;
+            
+            pc.onicecandidate = (e) => {
+                if (!e.candidate) {
+                    crypto.subtle.exportKey('raw', encryptionKey).then(keyData => {
+                        const offer = {
+                            sdp: pc.localDescription,
+                            key: btoa(String.fromCharCode(...new Uint8Array(keyData))),
+                            peerId: peerId
+                        };
+                        document.getElementById('offerBox').value = btoa(JSON.stringify(offer));
+                        document.getElementById('offerStep').style.display = 'block';
+                        document.getElementById('answerInputStep').style.display = 'block';
+                        log('$ Offer ready - share with peer', 'success');
+                    });
+                }
+            };
+            
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            log('$ Creating offer...', 'info');
+            document.getElementById('createBtn').disabled = true;
+        });
+
+        // Connect with answer
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            const answerText = document.getElementById('answerInput').value;
+            if (!answerText) return;
+            
+            try {
+                const answer = JSON.parse(atob(answerText));
+                const peerData = Array.from(peers.values())[0];
+                await peerData.pc.setRemoteDescription(answer);
+                log('$ Connecting to peer...', 'info');
+            } catch (e) {
+                log('$ ERROR: Invalid answer format', 'error');
+            }
+        });
+
+        // Create answer
+        document.getElementById('answerBtn').addEventListener('click', async () => {
+            const offerText = document.getElementById('remoteOfferInput').value;
+            if (!offerText) return;
+            
+            try {
+                const offerData = JSON.parse(atob(offerText));
+                
+                // Import encryption key
+                const keyData = Uint8Array.from(atob(offerData.key), c => c.charCodeAt(0));
+                encryptionKey = await crypto.subtle.importKey(
+                    'raw', keyData, { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']
+                );
+                log('$ Encryption key imported', 'success');
+                
+                const peerData = await createPeerConnection(offerData.peerId, false);
+                const pc = peerData.pc;
+                
+                pc.onicecandidate = (e) => {
+                    if (!e.candidate) {
+                        document.getElementById('answerBox').value = btoa(JSON.stringify(pc.localDescription));
+                        document.getElementById('answerStep').style.display = 'block';
+                        log('$ Answer ready - send to peer', 'success');
+                    }
+                };
+                
+                await pc.setRemoteDescription(offerData.sdp);
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                log('$ Creating answer...', 'info');
+                document.getElementById('answerBtn').disabled = true;
+            } catch (e) {
+                log('$ ERROR: Invalid offer format', 'error');
+            }
+        });
+
+        // Send message
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || peers.size === 0) return;
+            
+            try {
+                const encrypted = await encrypt(text);
+                const message = JSON.stringify({ type: 'message', content: encrypted });
+                
+                peers.forEach(peer => {
+                    if (peer.channel && peer.channel.readyState === 'open') {
+                        peer.channel.send(message);
+                    }
+                });
+                
+                const timestamp = new Date().toLocaleTimeString();
+                log(`[${timestamp}] <you>: ${text}`, 'sent');
+                messageInput.value = '';
+            } catch (err) {
+                log('$ ERROR: Failed to send', 'error');
+            }
+        }
+
+        // Send image
+        imageBtn.addEventListener('click', () => imageInput.click());
+        
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || peers.size === 0) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                const dataUrl = evt.target.result;
+                const message = JSON.stringify({ type: 'image', content: dataUrl });
+                
+                peers.forEach(peer => {
+                    if (peer.channel && peer.channel.readyState === 'open') {
+                        peer.channel.send(message);
+                    }
+                });
+                
+                logImage(dataUrl, 'you', 'sent');
+            };
+            reader.readAsDataURL(file);
+            imageInput.value = '';
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
