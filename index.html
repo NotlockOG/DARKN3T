@@ -555,7 +555,7 @@
             line.className = `line ${type}`;
             const timestamp = new Date().toLocaleTimeString();
             const displayName = sender === 'you' ? username : sender;
-            line.textContent = `[${timestamp}] <${displayName}>: [FILE: ${fileName}]`;
+            line.textContent = `[${timestamp}] <${displayName}>: [🔒 ENCRYPTED FILE: ${fileName}]`;
             output.appendChild(line);
             
             const downloadBtn = document.createElement('button');
@@ -621,6 +621,39 @@
             );
             return new TextDecoder().decode(decrypted);
         }
+        
+        // Encrypt binary data (for files)
+        async function encryptFile(arrayBuffer) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                encryptionKey,
+                arrayBuffer
+            );
+            
+            // Combine IV + encrypted data
+            const combined = new Uint8Array(iv.length + encrypted.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(encrypted), iv.length);
+            
+            // Convert to base64 for transmission
+            return btoa(String.fromCharCode(...combined));
+        }
+        
+        // Decrypt binary data (for files)
+        async function decryptFile(encryptedBase64) {
+            const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const data = combined.slice(12);
+            
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: iv },
+                encryptionKey,
+                data
+            );
+            
+            return decrypted;
+        }
 
         function setupDataChannel(channel, peerId) {
             channel.onopen = () => {
@@ -666,7 +699,17 @@
                     } else if (data.type === 'file') {
                         const peer = peers.get(peerId);
                         const displayName = peer?.username || peerId;
-                        logFile(data.fileName, data.content, displayName, 'received');
+                        
+                        // Decrypt the file data
+                        try {
+                            const decryptedData = await decryptFile(data.content);
+                            // Convert back to data URL
+                            const blob = new Blob([decryptedData], { type: data.mimeType || 'application/octet-stream' });
+                            const dataUrl = URL.createObjectURL(blob);
+                            logFile(data.fileName, dataUrl, displayName, 'received');
+                        } catch (err) {
+                            log('$ ERROR: Failed to decrypt file', 'error');
+                        }
                     }
                 } catch (err) {
                     log('$ ERROR: Failed to process message', 'error');
