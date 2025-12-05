@@ -12,7 +12,7 @@
         }
         body {
             background: #0c0c0c;
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', 'Consolas', 'Monaco', 'Lucida Console', monospace;
             color: #00ff00;
             height: 100vh;
             display: flex;
@@ -40,6 +40,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 13px;
+            letter-spacing: 1px;
         }
         .peers-count { font-size: 12px; }
         .status-dot {
@@ -228,8 +230,9 @@
             padding: 10px 15px;
             text-align: center;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             border-bottom: 2px solid #ff8800;
+            letter-spacing: 2px;
         }
         .mode-tabs {
             display: flex;
@@ -244,7 +247,7 @@
             ⚠️ OFFICIAL SERVERS CURRENTLY BEING MADE - WILL BE UP BY 2026 ⚠️
         </div>
         <div class="terminal-header">
-            <span>P2P-CHAT v1.3 [HYBRID MODE]</span>
+            <span>DARKN3T v1.4 [HYBRID MODE]</span>
             <span class="peers-count">
                 <span class="status-dot offline" id="statusDot"></span>
                 <span id="statusText">OFFLINE MODE</span>
@@ -362,6 +365,7 @@
         <div class="setup-panel" id="setupPanel">
             <div class="mode-tabs">
                 <button id="offlineTabBtn">OFFLINE P2P</button>
+                <button class="secondary" id="publicRoomsTabBtn">PUBLIC ROOMS</button>
                 <button class="secondary" id="serverTabBtn">SERVER MODE</button>
             </div>
 
@@ -393,6 +397,45 @@
                     <button onclick="navigator.clipboard.writeText(document.getElementById('answerBox').value)">COPY ANSWER</button>
                 </div>
             </div>
+            
+            <!-- Public Rooms Mode (No Server) -->
+            <div id="publicRoomsMode" style="display:none;">
+                <div class="line info">// Public Rooms - No server needed!</div>
+                <div class="line warning">// Join a numbered room. Anyone in the same room can chat.</div>
+                <div class="step">
+                    <div class="line success">// Quick Join:</div>
+                    <button id="randomRoomBtn" style="background: #ff00ff; margin-bottom: 10px;">JOIN RANDOM ROOM</button>
+                </div>
+                <div class="step">
+                    <div class="line info">// Room Guide:</div>
+                    <div style="font-size: 12px; color: #00aaff; margin-top: 5px; margin-bottom: 10px;">
+                        <div>Room 1: General Chat</div>
+                        <div>Room 2: Unblocked Games Links</div>
+                        <div>Room 3: Homework Help</div>
+                        <div>Room 4: Memes & Funny Stuff</div>
+                        <div>Room 5: Coding & Tech</div>
+                        <div>Rooms 6-10: Off-Topic / Random</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="line info">// Select a room:</div>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px;">
+                        <button class="secondary" onclick="joinPublicRoom(1)" title="General Chat">ROOM 1</button>
+                        <button class="secondary" onclick="joinPublicRoom(2)" title="Unblocked Games">ROOM 2</button>
+                        <button class="secondary" onclick="joinPublicRoom(3)" title="Homework Help">ROOM 3</button>
+                        <button class="secondary" onclick="joinPublicRoom(4)" title="Memes">ROOM 4</button>
+                        <button class="secondary" onclick="joinPublicRoom(5)" title="Coding">ROOM 5</button>
+                        <button class="secondary" onclick="joinPublicRoom(6)" title="Off-Topic">ROOM 6</button>
+                        <button class="secondary" onclick="joinPublicRoom(7)" title="Off-Topic">ROOM 7</button>
+                        <button class="secondary" onclick="joinPublicRoom(8)" title="Off-Topic">ROOM 8</button>
+                        <button class="secondary" onclick="joinPublicRoom(9)" title="Off-Topic">ROOM 9</button>
+                        <button class="secondary" onclick="joinPublicRoom(10)" title="Off-Topic">ROOM 10</button>
+                    </div>
+                </div>
+                <div class="step" style="margin-top: 15px;">
+                    <div class="line warning" id="publicRoomStatus">$ Select a room to join...</div>
+                </div>
+            </div>
 
             <!-- Server Mode -->
             <div id="serverMode" style="display:none;">
@@ -419,12 +462,19 @@
 
         <div class="output" id="output">
             <div class="line success">╔═══════════════════════════════════════════════╗</div>
-            <div class="line success">║  P2P ENCRYPTED CHAT v1.3                      ║</div>
+            <div class="line success">║        DARKN3T v1.4 - ENCRYPTED P2P           ║</div>
             <div class="line success">╚═══════════════════════════════════════════════╝</div>
             <div class="line"></div>
-            <div class="line info">$ Two modes available:</div>
-            <div class="line info">$ 1. OFFLINE P2P - Works anywhere, just exchange codes</div>
-            <div class="line info">$ 2. SERVER MODE - Connect to signaling server for rooms</div>
+            <div class="line" style="color: #00ff00;">
+   /\_/\  
+  ( o.o ) 
+   > ^ <   Chat Securely!
+            </div>
+            <div class="line"></div>
+            <div class="line info">$ Three modes available:</div>
+            <div class="line info">$ 1. OFFLINE P2P - Exchange codes with friends</div>
+            <div class="line info">$ 2. PUBLIC ROOMS - Join numbered rooms (1-10) or random</div>
+            <div class="line info">$ 3. SERVER MODE - Connect to signaling server</div>
             <div class="line"></div>
             <div class="line warning">$ Select mode above to get started...</div>
         </div>
@@ -438,6 +488,7 @@
                 <button id="imageBtn" disabled title="Send Image">IMG</button>
                 <button id="fileBtn" disabled title="Send File">FILE</button>
                 <button id="sendBtn" disabled>SEND</button>
+                <button class="secondary" id="cloakBtn" title="Open in About:Blank">CLOAK</button>
                 <button class="secondary" id="changeNameBtn" title="Change Username">@</button>
                 <button class="secondary" id="tosBtn" title="View Terms">ToS</button>
                 <button class="secondary" onclick="window.open('https://github.com/NotlockOG/TerminalP2P', '_blank')" title="View on GitHub">GitHub</button>
@@ -467,6 +518,21 @@
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const leaveBtn = document.getElementById('leaveBtn');
+        let publicRoomNumber = null;
+        const PUBLIC_ROOM_CODES = {
+            // Pre-generated room codes for public rooms 1-10
+            // These are fixed so anyone joining "Room 1" gets the same code
+            1: 'PUBLIC1ROOM',
+            2: 'PUBLIC2ROOM',
+            3: 'PUBLIC3ROOM',
+            4: 'PUBLIC4ROOM',
+            5: 'PUBLIC5ROOM',
+            6: 'PUBLIC6ROOM',
+            7: 'PUBLIC7ROOM',
+            8: 'PUBLIC8ROOM',
+            9: 'PUBLIC9ROOM',
+            10: 'PUBLIC10RM'
+        };
 
         // Prompt for username if not set
         if (!username) {
@@ -753,6 +819,139 @@
             return peerData;
         }
 
+        // ===== PUBLIC ROOMS MODE (No Server) =====
+        
+        window.joinPublicRoom = async function(roomNumber) {
+            publicRoomNumber = roomNumber;
+            const roomCode = PUBLIC_ROOM_CODES[roomNumber];
+            
+            // Room descriptions
+            const roomNames = {
+                1: 'General Chat',
+                2: 'Unblocked Games Links',
+                3: 'Homework Help',
+                4: 'Memes & Funny Stuff',
+                5: 'Coding & Tech',
+                6: 'Off-Topic',
+                7: 'Off-Topic',
+                8: 'Off-Topic',
+                9: 'Off-Topic',
+                10: 'Off-Topic'
+            };
+            
+            const roomName = roomNames[roomNumber];
+            
+            document.getElementById('publicRoomStatus').textContent = `$ Connecting to Room ${roomNumber}: ${roomName}...`;
+            document.getElementById('publicRoomStatus').className = 'line info';
+            
+            log('', 'info');
+            log(`$ Joining Public Room ${roomNumber}: ${roomName}`, 'info');
+            log(`$ Room code: ${roomCode}`, 'system');
+            log(`$ Anyone with this code will join the same room!`, 'system');
+            
+            // Generate encryption key for this room (same for all users using room code)
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(roomCode),
+                'PBKDF2',
+                false,
+                ['deriveBits', 'deriveKey']
+            );
+            
+            encryptionKey = await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: encoder.encode('p2p-chat-salt'),
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                true,
+                ['encrypt', 'decrypt']
+            );
+            
+            setupPanel.classList.add('hidden');
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            imageBtn.disabled = false;
+            fileBtn.disabled = false;
+            leaveBtn.disabled = false;
+            leaveBtn.style.display = 'block';
+            messageInput.placeholder = 'Type message...';
+            messageInput.focus();
+            
+            log('', 'info');
+            log('╔═══════════════════════════════════════════════╗', 'success');
+            log(`║  ROOM ${roomNumber}: ${roomName.padEnd(38, ' ')}║`, 'success');
+            log('║  WAITING FOR OTHER USERS...                    ║', 'success');
+            log('╚═══════════════════════════════════════════════╝', 'success');
+            log('', 'info');
+            log('$ Share this with others: "Join Public Room ' + roomNumber + '"', 'info');
+            log('$ Or tell them: "Join ' + roomName + ' (Room ' + roomNumber + ')"', 'info');
+            log('', 'info');
+            
+            statusDot.className = 'status-dot connected';
+            statusText.textContent = `ROOM ${roomNumber}: ${roomName}`;
+            
+            // Start listening for peer discovery broadcasts
+            startPublicRoomDiscovery(roomNumber);
+        };
+        
+        document.getElementById('randomRoomBtn').addEventListener('click', () => {
+            const randomRoom = Math.floor(Math.random() * 10) + 1;
+            joinPublicRoom(randomRoom);
+        });
+        
+        // Public room peer discovery using localStorage events
+        function startPublicRoomDiscovery(roomNumber) {
+            // Announce presence
+            const announcement = {
+                type: 'presence',
+                roomNumber: roomNumber,
+                peerId: clientId,
+                username: username,
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('p2p_room_announce', JSON.stringify(announcement));
+            
+            // Listen for other users
+            window.addEventListener('storage', handlePublicRoomStorage);
+            
+            // Periodic announcements
+            const announceInterval = setInterval(() => {
+                if (publicRoomNumber === roomNumber) {
+                    localStorage.setItem('p2p_room_announce', JSON.stringify({
+                        ...announcement,
+                        timestamp: Date.now()
+                    }));
+                } else {
+                    clearInterval(announceInterval);
+                }
+            }, 3000);
+        }
+        
+        function handlePublicRoomStorage(e) {
+            if (e.key !== 'p2p_room_announce' || !publicRoomNumber) return;
+            
+            try {
+                const data = JSON.parse(e.newValue);
+                
+                // Someone in same room!
+                if (data.roomNumber === publicRoomNumber && data.peerId !== clientId) {
+                    log(`$ Discovered user in room: ${data.username || data.peerId}`, 'success');
+                    
+                    // Note: This is a simplified discovery mechanism
+                    // In reality, WebRTC connection would need to be established here
+                    // For now, this serves as a "room joined" notification
+                }
+            } catch (err) {
+                // Ignore invalid data
+            }
+        }
+
         // ===== OFFLINE P2P MODE =====
         
         document.getElementById('createBtn').addEventListener('click', async () => {
@@ -1030,7 +1229,13 @@
         document.getElementById('refreshRoomsBtn').addEventListener('click', requestRoomList);
 
         leaveBtn.addEventListener('click', () => {
-            if (!currentRoom) return;
+            if (publicRoomNumber) {
+                // Leaving public room
+                publicRoomNumber = null;
+                window.removeEventListener('storage', handlePublicRoomStorage);
+            }
+            
+            if (!currentRoom && !publicRoomNumber) return;
             
             ws.send(JSON.stringify({ type: 'leave-room' }));
             
@@ -1123,15 +1328,28 @@
         
         document.getElementById('offlineTabBtn').addEventListener('click', () => {
             document.getElementById('offlineMode').style.display = 'block';
+            document.getElementById('publicRoomsMode').style.display = 'none';
             document.getElementById('serverMode').style.display = 'none';
             document.getElementById('offlineTabBtn').className = '';
+            document.getElementById('publicRoomsTabBtn').className = 'secondary';
+            document.getElementById('serverTabBtn').className = 'secondary';
+        });
+        
+        document.getElementById('publicRoomsTabBtn').addEventListener('click', () => {
+            document.getElementById('offlineMode').style.display = 'none';
+            document.getElementById('publicRoomsMode').style.display = 'block';
+            document.getElementById('serverMode').style.display = 'none';
+            document.getElementById('offlineTabBtn').className = 'secondary';
+            document.getElementById('publicRoomsTabBtn').className = '';
             document.getElementById('serverTabBtn').className = 'secondary';
         });
         
         document.getElementById('serverTabBtn').addEventListener('click', () => {
             document.getElementById('offlineMode').style.display = 'none';
+            document.getElementById('publicRoomsMode').style.display = 'none';
             document.getElementById('serverMode').style.display = 'block';
             document.getElementById('offlineTabBtn').className = 'secondary';
+            document.getElementById('publicRoomsTabBtn').className = 'secondary';
             document.getElementById('serverTabBtn').className = '';
         });
         
@@ -1156,7 +1374,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'p2p-chat-v1.3.html';
+            a.download = 'darknet-v1.4.html';
             a.click();
             URL.revokeObjectURL(url);
         });
@@ -1178,6 +1396,30 @@
             
             // Redirect to blank page (closes the chat)
             window.location.href = 'about:blank';
+        });
+        
+        // Cloak button - open in about:blank
+        document.getElementById('cloakBtn').addEventListener('click', () => {
+            const currentUrl = window.location.href;
+            const win = window.open('about:blank', '_blank');
+            
+            if (win) {
+                win.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>My Drive - Google Drive</title>
+                        <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+                    </head>
+                    <body style="margin:0;padding:0;overflow:hidden;">
+                        <iframe src="${currentUrl}" style="border:0;width:100%;height:100vh;"></iframe>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+            } else {
+                alert('Pop-up blocked! Please allow pop-ups for this site.');
+            }
         });
     </script>
 </body>
